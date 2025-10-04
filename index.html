@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>English Drills — Index</title>
+  <style>
+    :root{
+      --bg:#f8fafc;
+      --panel:#ffffff;
+      --muted:#475569;
+      --text:#0f172a;
+      --accent:#2563eb;
+      --accent-soft:#e0e7ff;
+      --border:#e5e7eb;
+      --chip:#10b981;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--text);
+      background:linear-gradient(180deg,#eef2ff 0%, #f8fafc 28%, #ffffff 100%);
+      font:16px/1.55 system-ui,Segoe UI,Roboto,Helvetica,Arial;
+      display:grid; grid-template-columns:300px 1fr; grid-template-rows:auto 1fr auto;
+      grid-template-areas:"header header" "sidebar main" "footer footer"; gap:14px; padding:14px;
+    }
+    header{grid-area:header; background:var(--panel); border:1px solid var(--border);
+      border-radius:16px; padding:12px 16px; display:flex; align-items:center; gap:12px}
+    header h1{font-size:18px; margin:0}
+    #search{flex:1}
+    #search input{width:100%; border:1px solid var(--border); border-radius:12px; padding:10px 12px}
+
+    aside{grid-area:sidebar; background:var(--panel); border:1px solid var(--border);
+      border-radius:16px; padding:10px; display:flex; flex-direction:column; min-height:0}
+    .sidebar-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px}
+    .section-chip{font-size:12px; padding:2px 8px; border-radius:999px; background:#ecfeff; color:#0e7490; border:1px solid #a5f3fc}
+
+    .chapters{overflow:auto; min-height:0; border-top:1px dashed var(--border); margin-top:8px}
+    .chapter{padding:10px 8px; border-bottom:1px dashed var(--border); cursor:pointer; display:grid; gap:6px}
+    .chapter:hover{background:var(--accent-soft)}
+    .chapter.active{background:var(--accent-soft); border-left:3px solid var(--accent)}
+    .chapter small{color:var(--muted)}
+
+    main{grid-area:main; display:grid; grid-template-rows:auto 1fr; gap:12px}
+    .intro{background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:12px}
+    .content{background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:12px; overflow:auto; min-height:0}
+    .content h2{margin:4px 0 0 0; font-size:18px}
+    .meta{color:var(--muted); font-size:14px}
+
+    .item{border:1px solid var(--border); border-radius:14px; padding:10px; display:grid; gap:8px; margin:10px 0}
+    .row{display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap}
+    .badge{font-size:12px; padding:2px 8px; border-radius:999px; background:#dcfce7; color:#166534; border:1px solid #bbf7d0}
+    .en{font-weight:600}
+    .pl{color:var(--muted)}
+    audio{width:260px; max-width:100%}
+
+    .toolbar{display:flex; gap:8px; flex-wrap:wrap}
+    .toolbar > *{border:1px solid var(--border); background:#f8fafc; color:var(--text); padding:8px 10px; border-radius:10px}
+    .toolbar select, .toolbar input{background:#fff}
+
+    footer{grid-area:footer; color:var(--muted); font-size:14px; text-align:center}
+
+    @media (max-width: 980px){
+      body{grid-template-columns:1fr; grid-template-rows:auto auto 1fr auto; grid-template-areas:"header" "sidebar" "main" "footer"}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>English Drills — Chapters & Inline Audio</h1>
+    <div id="search"><input type="search" placeholder="Szukaj: rozdział / tag" id="searchInput"></div>
+  </header>
+
+  <aside>
+    <div class="sidebar-head">
+      <strong>Rozdziały</strong>
+      <span class="section-chip" id="countChip">0</span>
+    </div>
+    <div class="chapters" id="chapters"></div>
+  </aside>
+
+  <main>
+    <section class="intro">
+      <div class="toolbar">
+        <label>Prędkość
+          <select id="speedSel">
+            <option value="0.75">0.75×</option>
+            <option value="0.9">0.9×</option>
+            <option value="1" selected>1.0×</option>
+            <option value="1.1">1.1×</option>
+            <option value="1.25">1.25×</option>
+            <option value="1.5">1.5×</option>
+          </select>
+        </label>
+        <label>Autoodtwarzanie w dół listy <input id="autoplay" type="checkbox" checked></label>
+        <label>Powtórz każdy klip
+          <select id="repeatCount">
+            <option value="1">×1</option>
+            <option value="2" selected>×2</option>
+            <option value="3">×3</option>
+            <option value="4">×4</option>
+          </select>
+        </label>
+        <label>Przerwa (s) <input id="gapSec" type="number" min="0" max="5" step="0.5" value="0.8"></label>
+      </div>
+      <p class="meta">Wybierz rozdział po lewej — treść pojawi się po prawej. Każdy wiersz ma mini-odtwarzacz.</p>
+    </section>
+
+    <section class="content" id="content">
+      <h2>Wczytywanie...</h2>
+    </section>
+  </main>
+
+  <footer>Minimalistyczny serwis do ćwiczeń (Callan-style)</footer>
+
+<script>
+const CHAPTER_FILES = [
+  { id:"unit1", title:"Unit 1 — Podstawowe słownictwo", file:"unit1.html", tags:["intro"] },
+];
+
+const chaptersEl = document.getElementById('chapters');
+const contentEl = document.getElementById('content');
+const countChip = document.getElementById('countChip');
+const searchInput = document.getElementById('searchInput');
+const speedSel = document.getElementById('speedSel');
+const autoplayCbx = document.getElementById('autoplay');
+const repeatCountSel = document.getElementById('repeatCount');
+const gapSecInput = document.getElementById('gapSec');
+
+let currentFile = null;
+
+function renderChapters(filter=""){
+  chaptersEl.innerHTML="";
+  let visible=0;
+  CHAPTER_FILES.forEach(c=>{
+    const hay=(c.title+" "+(c.tags||[]).join(" ")).toLowerCase();
+    if(filter && !hay.includes(filter.toLowerCase())) return;
+    visible++;
+    const el=document.createElement('div');
+    el.className='chapter'+(c.file===currentFile?' active':'');
+    el.innerHTML=`<div style="font-weight:600">${c.title}</div>
+    <small>${(c.tags||[]).map(t=>"#"+t).join(" ")}</small>`;
+    el.addEventListener('click',()=>loadChapter(c.file));
+    chaptersEl.appendChild(el);
+  });
+  countChip.textContent=visible;
+}
+
+async function loadChapter(file){
+  currentFile=file;
+  renderChapters(searchInput.value);
+  contentEl.innerHTML="<h2>Ładowanie...</h2>";
+  try{
+    const res=await fetch(file,{cache:"no-cache"});
+    if(!res.ok) throw new Error(res.status+" "+res.statusText);
+    const html=await res.text();
+    contentEl.innerHTML=html;
+    const audios=[...contentEl.querySelectorAll('audio')];
+    audios.forEach(audio=>{
+      audio.playbackRate=parseFloat(speedSel.value);
+      let repeatLeft=parseInt(repeatCountSel.value,10);
+      audio.addEventListener('ended',async()=>{
+        repeatLeft--;
+        if(repeatLeft>0){
+          const gap=Math.max(0,parseFloat(gapSecInput.value)||0);
+          await new Promise(r=>setTimeout(r,gap*1000));
+          audio.currentTime=0; audio.play();
+        } else if(autoplayCbx.checked){
+          const list=[...contentEl.querySelectorAll('audio')];
+          const pos=list.indexOf(audio);
+          const next=list[pos+1];
+          if(next) next.play();
+          repeatLeft=parseInt(repeatCountSel.value,10);
+        } else repeatLeft=parseInt(repeatCountSel.value,10);
+      });
+    });
+    speedSel.addEventListener('change',()=>{
+      const rate=parseFloat(speedSel.value);
+      [...contentEl.querySelectorAll('audio')].forEach(a=>a.playbackRate=rate);
+    });
+  }catch(err){
+    contentEl.innerHTML=`<h2>Nie udało się wczytać rozdziału</h2>
+    <p class='meta'>Plik: ${file}<br>Błąd: ${err.message}</p>`;
+  }
+}
+
+searchInput.addEventListener('input',()=>renderChapters(searchInput.value));
+
+(function init(){
+  renderChapters();
+  if(CHAPTER_FILES.length){ loadChapter(CHAPTER_FILES[0].file); }
+})();
+</script>
+</body>
+</html>
